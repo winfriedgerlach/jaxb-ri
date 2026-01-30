@@ -11,6 +11,8 @@
 
 package org.glassfish.jaxb.core.v2;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -33,18 +35,19 @@ import org.glassfish.jaxb.core.Utils;
  * @author Kohsuke Kawaguchi
  */
 public final class ClassFactory {
+    private static final MethodHandles.Lookup lookup = MethodHandles.lookup();
     private static final Class[] emptyClass = new Class[0];
     private static final Object[] emptyObject = new Object[0];
 
     private static final Logger logger = Utils.getClassLogger();
 
     /**
-     * Cache from a class to its default constructor.
+     * Cache from a class to a {@link MethodHandle} of its default constructor.
      */
-    private static final ClassValue<Constructor> DECLARED_CTORS =
+    private static final ClassValue<MethodHandle> DECLARED_CTORS =
             new ClassValue<>() {
                 @Override
-                protected Constructor computeValue(Class<?> clazz) {
+                protected MethodHandle computeValue(Class<?> clazz) {
                     Constructor cons;
                     if (System.getSecurityManager() == null) {
                         cons = tryGetDeclaredConstructor(clazz);
@@ -66,7 +69,12 @@ public final class ClassFactory {
                             }
                         }
                     }
-                    return cons;
+                    try {
+                        return lookup.unreflectConstructor(cons);
+                    } catch (IllegalAccessException e) {
+                        // this should never happen as we have already made it accessible
+                        throw new RuntimeException(e);
+                    }
                 }
             };
 
@@ -84,8 +92,15 @@ public final class ClassFactory {
      * Creates a new instance of the class but throw exceptions without catching it.
      */
     public static <T> T create0( final Class<T> clazz ) throws IllegalAccessException, InvocationTargetException, InstantiationException {
-        Constructor<T> cons = DECLARED_CTORS.get(clazz);
-        return cons.newInstance(emptyObject);
+        var constructorHandle = DECLARED_CTORS.get(clazz);
+        try {
+            var instance = constructorHandle.invoke();
+            return (T) instance;
+        } catch (Throwable t) {
+            // unfortunately, invoke() throws Throwable - let's wrap it in a RuntimeException for now so we don't have
+            // to change the method signature
+            throw new RuntimeException(t);
+        }
     }
 
     private static <T> Constructor<T> tryGetDeclaredConstructor(Class<T> clazz) {
