@@ -1,8 +1,8 @@
 package com.sun.xml.xsom.test;
 
 /*
+ * Copyright (c) 2025, 2026 Contributors to the Eclipse Foundation. All rights reserved.
  * Copyright (c) 1997, 2022 Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2025 Contributors to the Eclipse Foundation. All rights reserved.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Distribution License v. 1.0, which is available at
@@ -24,6 +24,7 @@ import com.sun.xml.xsom.parser.XSOMParser;
 import com.sun.xml.xsom.parser.XmlFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.InputSource;
 
@@ -34,9 +35,11 @@ import java.util.Set;
  *
  * @author Farrukh S. Najmi
  */
+@Disabled("Fails with HTTP 403 on GH")
 public class XSOMParserTest {
 
-    private static String docURLStr = "https://docs.oasis-open.org/regrep/v3.0/schema/lcm.xsd";
+    private static String docURLStr = "https://docs.oasis-open.org/regrep/regrep-core/v4.0/os/xsd/lcm.xsd";
+    //private static String docURLStr = "https://docs.oasis-open.org/regrep/v3.0/schema/lcm.xsd";
     //private static String docURLStr = "http://ebxmlrr.sourceforge.net/private/sun/irs/ContactMechanism/IRS-ContactMechanismCommonAggregateComponents-1.0.xsd";
     private static URL docURL = null;
     private static XSOMParser instance = null;
